@@ -1,0 +1,30 @@
+% !TeX root = ../main.tex
+% Add the above to each chapter to make compiling the PDF easier in some editors.
+
+\chapter{Use Case}\label{chapter:use_case}
+The goal of the CMC Universal Remote Attestation Framework is to facilitate the mutual attestation of different TEEs. With the help of mutual attestation, it should be possible to establish a protected transmission channel between the systems and thereby enable confidential data exchange.
+
+Consider a healthcare organization that stores sensitive patient medical records in a cloud environment. To ensure the confidentiality and integrity of the patient's recods, the organization employs a variety of TEE technologies to secure the processing of this sensitive data.
+The organization uses a distributed system with multiple TEEs for different aspects of data processing, e.g. encryption, secure data analysis, etc., which jointly operate and exchange sensitive information with each other.
+The CMC Framework enables customized mutual attestation between the different TEEs and the establishment of a secure communication channel. 
+
+This has several benefits:
+First, the healthcare organization can now exchange sensitive patient information between different TEEs, knowing the systems had not been compromised. Second, the secure channel ensures the confidentiality, integrity and authenticity oft the data in transit. And third, the effort required to integrate the framework into the existing system architecture is negligible compared to the development of an custom attestation mechanism. 
+
+\section{Threat Model}
+The threat model encompasses the following scenarios:
+
+The adversary in this model has the ability to execute both Dolev-Yao attacks, operating within the network to intercept, modify, and relay data, and inside attacker actions, leveraging remote access to a machine with root privileges. \cite{dolev_yao} For instance, a cloud administrator with significant control over the system's infrastructure. 
+The primary objectives of these attackers revolve around compromising the system's software stack, without getting noticed. Alternatively, attackers may try to masquerade as a trusted machine, which could allow them to gain sensitive information.  \cite{CMC_paper}
+
+Importantly certain kind of attacks, such as side-channel attacks, which are able to evaluate various statistics about the CPU to gain information about the software running inside a TEE are generally not part of the treat model and thus not mitigated. Also Denial of service attacks are not covered, as for example a malicious cloud administrator could always prevent a TEE from running.  \cite{overview_of_sgx}
+
+\section{Security Requirements}
+Based on this threat model, the Universal Remote Attestation Framework must adhere to the following security requirements:
+
+\begin{enumerate}
+	\item The confidentiality and integrity of the attestation report should be preserved inside the TEE
+	\item The client should receive a confirmation about the trustworthyness of the remote TEE (if it is protected and in the correct state) 
+	\item The secure channel should protect the confidentiality, integrity and authenticity of the data in transit.
+	\item The attestation evidence should be bound to the secure channel 
+\end{enumerate}		

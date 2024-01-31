@@ -1,0 +1,16 @@
+# Ignore LaTeX build files
+*.aux
+*.log
+*.synctex.gz
+*.pdf
+*.toc
+*.lof
+*.lot
+*.out
+*.blg
+*.bbl
+*.run.xml
+
+# Ignore the build folder
+/build
+

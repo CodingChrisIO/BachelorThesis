@@ -1,0 +1,51 @@
+% !TeX root = ../main.tex
+% Add the above to each chapter to make compiling the PDF easier in some editors.
+
+\chapter{Implementation}\label{chapter:implementation}
+
+As described in the integration chapter \ref{chapter:integration}, the goal is to link the CMC as a program library into the enclave so that all report generation and verification occurs within an enclave.
+However, due initial concept variations and complications in the enclave’s linking process with the CMC, that haven’t been fixed yet, report generation and verification could not yet be executed entirely within an enclave. 
+, this implementation functions as a Proof of Concept (PoC) to generate valid reports for the purpose of testing the verification function.
+
+The following subsections will describe the technical implementation details of the respective drivers and difficulties that occurred in the process. 
+The software was developed and tested on real SGX hardware, an Intel NUC system with an Intel Pentium Silver J5005 CPU and flexible launch control support. The operating system is Ubuntu 22.04 LTS. The frameworks programming language is Go (Golang), the testing enclave has been implemented in C++.  
+
+\section{Technical Details of Report Generation}
+First a testing enclave has been created with one function, that internally creates an attestation report and includes a given nonce inside the custom report data field. 
+Using the sgx\_edger8r tool, corresponding C-wrapper functions (edge routines) were generated, based on the function definition in enclave definition language. These wrapper functions are necessary to switch into the context of the enclave (ECALLs), to execute the corresponding function there and to return to the normal program (OCALLs). \cite{sgx_whitepaper}
+After the report has been generated the enclave gets destroyed. Then the Intel DCAP Quote Generation function is used to create the report, and the resulting quote is written onto the filesystem. 
+
+The exemplary Report Generation driver provides two external functions Init and Measure:
+
+\begin{itemize}
+	\item The Init function initializes the Sgx driver, given a specific configuration, that defines values, such as the storage path, the server address, a serializer, metadata, etc.
+	The function generates a private key, creates a storage folder and retrieves signing certificates from the estserver. Additionally, it fetches the Intel PCK-, Processor CA-, Root CA-, and TCB Signing-certificates for the enclave from the PCCS database and combines them in a certificate chain. 
+	
+	\item The Measure function essentially retrieves the quote from the file system. It then combines the extracted bytes with the previously generated certificate chain into a new SGX Measurement structure and returns it.
+\end{itemize}
+
+\section{Technical Details of Report Validation}
+The core task for integrating SGX into the CMC framework on the verification side is the implementation of the measurement verification function.  Additionally, to facilitate the verification process, parsing function for various elements, such as reports, certificates and more have to be implemented functions, to converte the raw bytes into suitable data structures. 
+The complete verification of a quote requires extensive and precise work. 
+However, it can be divided into 5 major steps steps \cite{sgx_attestation_paper}:
+
+\begin{enumerate}
+	\item Verify the integrity of the signature chain from the Quote.
+	\item Verify no keys in the chain have been revoked. 
+	\item Verify the Quoting Enclave is from a suitable source and is up to date. 
+	\item Verify the status of the Intel SGX TCB described in the chain 
+	\item Verify the measurements of the quote and QE match with the expected values  
+\end{enumerate}
+
+Since the CMC report provides much more information besides the quote itself, these steps are not exactly in this order.
+
+Initially, the report is parsed into the SGX quote structure, to access certain values more easily. Next, the nonce within the report is compared to the reference value inside the RTM Manifest. The certificate chain is extracted from the SGX Measurements (the CMC report structure). Depending on the QECertDataType value in the Quote signature data structure, the certificate chain is also part of the quote and can be extracted and verified as well. 
+The Certification Data Type plays a critical role in the quote verification process. For instance, if type 5 is used (standard), the Certification Data field will contain the complete PCK certificate chain. On the other hand, if it is of type 1, the Certification Data field will consist of a byte array that concatenates PPID, CPUSVN, PCESVN, and PCEID.
+The ECDSA Quote Library API Documentation \cite{dcap_library_doc} defines a total of 7 types, of which type 6 and 7 are not officially supported. However, a closer look at the quote-verification function reveals that an error is thrown if the quote signature does not contain the certificate chain, which seems to be a contradiction to the official Documentation.   
+Nevertheless, since the certificates are generally included in the cmc structure, other types can thus also be supported by the verification function, as a part of future work.
+
+Next, CRLs are downloaded from the PCS or fetched from a lokal cache and then verified, followed by parsing and validation of the TCB Info structure and the QE Identity from the RTM Manifest. The QE Identity values are required to verify the Report of the QE, as part of the Quote Signature. 
+Furthermore, the ECDSA signature of the Quote is verified, which proofs the authenticity of the attestation report.
+
+Finally, the values of the report body are verified against the provided reference values and the corresponding result is returned.
+In this process, among other things, the certificate extensions of the PCK certificate are also parsed and checked. These contain e.g. PPID, TCB level, FMSPC and other values which are supported by the enclave.

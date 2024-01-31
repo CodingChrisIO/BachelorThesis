@@ -1,0 +1,27 @@
+% !TeX root = ../main.tex
+% Add the above to each chapter to make compiling the PDF easier in some editors.
+
+\chapter{Introduction}\label{chapter:introduction}
+
+In the era of exponential data growth and the increasing demand for data-driven insights, cloud-based data processing has emerged as a transformative solution for modern enterprises. Backed up by rapid development and integration of new technologies, such as Docker, Kubernetes and other virtualization technologies, cloud service providers now offer scalable and cost-efficient infrastructures that are easily accessible and can be taylored to the customers needs. Organizations can leverage theses infrastructures to efficiently manage their vast datasets and extract valuable information to successfully compete on today’s markets. However, storing and processing critical information on external servers also comes with the risks of unauthorized data access and potential data breaches. 
+As a countermeasure to these threats, a new field of IT security has emerged: \textbf{confidential computing}.
+
+Confidential Computing Technologies provide data protection during computation by leveraging hardware-based, attested Trusted Execution Environments (TEEs). Within these secure and isolated environments, unauthorized access or alteration of applications and data in use is effectively prevented. Consequently, this empowers organizations managing sensitive and regulated data with higher security guarantees. \cite{ccc_website}
+
+The establishment of trust between a client and a remote system, is solved via a mechanism called remote attestation. It is based on the principle that a remote system is able to securely verify the integrity and confidentiality of a TEE hosted on another system by verifying a set of measurements. These measurements are securely generated and cryptographically signed by a hardware trust anchor to prevent secret manipulations. 
+Currently available confidential computing technologies like AMD Secure Encrypted Virtualization - Secure Nested Paging (SEV-SNP), Intel Software Guard Extensions (SGX), ARM Trust Zone or Trusted Platform Modules (TPMs) have the capabilities to act as such trust-anchors and to provide attestation evidence. 
+
+Nevertheless, in practice these capabilities often remain unused. This has several reasons. For one, the implementation of a remote attestation verification service requires a significant amount of expertise since it is often hard to interpret the provided attestation evidence correctly. Another reason is the lack of a standardized report format or a generic attestation framework. Every technology implements their own attestation mechanism. This particularly presents a challenge in achieving seamless interoperability among different platforms and devices. 
+
+In response to these issues, the Fraunhofer AISEC institute developed a Universal Remote Attestation Framework, offering a comprehensive solution for generating and verifying remote attestation reports for different confidential computing technologies. The architecture of this framework thereby differs from other generic architectures, such as Remote Attestation Procedures (RATS), with the goal of minimizing the required workload on the verifying platform.  
+
+This work enhances the functionality of the framework by integrating remote attestation support for Intel SGX enclaves.\\
+
+Chapter 2 starts by explaining a concrete use case for the framework. Furthermore it explains the underlying threat model and defines resulting security requirements. Chapter 3 provides essential background information on general remote attestation concepts, core functionalities of Intel SGX, its attestation mechanism, and the architecture of the remote attestation framework. Based on this knowledge, chapter 4 focuses on the integration of Intel SGX into the Universal Remote Attestation Framework. This includes designing a concept of SGX-based attestation with the cmc, analyzing the report structure of SGX Report and CMC Reports and identifying necessary metadata. Chapter 6 evaluates the security of the previously defined concept and the implementation and analyzes the performance of Report Generation and Verification. 
+In chapter 7, related work/research in the area of remote attestation frameworks and confidential computing in general is discussed. This examination situates this work in the current research area of remote attestation. 
+Future work for the Universal Remote Attestation Framework is considered in chapter 8. This includes especially the integration of Intel TDX. A short analysis is conducted to determine the feasibility of reusing the prior SGX implementation. 
+Finally, chapter 9 ends with a concluding statement about the result of this work.
+
+
+
+

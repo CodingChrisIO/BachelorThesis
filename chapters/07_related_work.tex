@@ -1,0 +1,36 @@
+% !TeX root = ../main.tex
+% Add the above to each chapter to make compiling the PDF easier in some editors.
+
+\chapter{Related Work}\label{chapter:related_work}
+Since Confidential Computing and Remote attestation are very broad and currently researched field, the following chapters will only give an short overview of the current research and development of other remote attestation frameworks and an outlook into other confidential computing areas.
+
+Edgeless Runtime (Edgeless RT) is an SDK for TEEs built on top of Open Enclave \cite{openenclave}, which currently supports Golang and Intel SGX enclaves. Enclaves can be built in Go by using the EGo Compiler. The runtime thereby supports an enclave developer typically in porting of existing applications and e.g. in linking a Go program to a C++ application. \cite{edgelessrt}
+As part of the implementation, an attempt was also made to compile the CMC with this runtime, but it was rejected because it turned out that the enclave report defined via Open Enclave uses a different (shortened) report format than ordinary SGX enclaves. This would limit the functionality of the CMC framework.
+
+The Go-Attestation project \cite{go-attestation} developed by Google aims to facilitate remote attestation for a variety of platforms and TPMs, by providing high level primitives for both client and server logic. In parts this library is also used for the TPM Driver implementation in the CMC. 
+
+Other open source framworks offering support for remote attestation, especially for enclaves, are e.g. Enarx \cite{enarx}, which is based on Web Assembly and also offers support for AMD SEV-SNP, the Veraison project \cite{veraison}, Open Enclave and the Microsoft Azure Attestation service (for SGX enclaves and other VM based TEEs) \cite{microsoft-azure-attestation}. 
+A mutual attestation approch for groups of SGX enclaves without trusted third parties is implemented by the MAGE framework. 
+It introduces a new technique to instrument these enclaves so that each one of them could derive the others identities using information solely from its own initial data. \cite{mage}
+A more generic attestation framework for IoT devices, especially supporting TPMs, is proposed in this paper: \cite{iot-ra-framework}
+Contrary to the CMC however, it offers only one-sided attestation. 
+
+While some of the above frameworks and SDKs offer attestation support for a variety of different TEEs, none of them achieve universality in the manner pursued by the CMC.
+
+As mentioned in the beginning, the RATS architecture defined by RFC 9334 also defines a general attestation concept, which relies on three parties, Attester, Verifier and Relying Party.  
+Hereby the verifier is responsible for the task of providing measurements, which differs from the CMC architecture. Furthermore, the distribution of the parties in the RATS has the disadvantage, that the communication channel between the verifier and the Relying Party potentially needs to be secured via a trust anchor. \cite{CMC_paper} 
+To provide even better security guarantees, the relying party might even need perform attestation on the verifier. \cite{rfc9334}, 
+Since the cmc concept on the other hand combines verifier and relying party on the verifier side in one entity so only one secure communication channel is needed.
+A design for more flexible remote attestation is proposed by this paper: \cite{flexible_RA}
+It suggests a language-based solution to taming the complexity of specifying and negotiating attestation procedures. 
+
+
+Moreover, also in the field of cryptography, new techniques are being developed to secure data during computation. Homomorphic encryption techniques for example allow computation on data while being encrypted state. \cite{homorphic_encryption}
+This does not only have significant advantages for private cloud-based data processing but also for example for privacy preserving machine learning applications. 
+
+Another rising field in cryptography is Secure Multi-Party Computation (SMPC). Its basic idea is, that multiple parties compute a joint function on their individual private inputs without revealing their secrets to one another. \cite{smpc}
+This could be especially useful in the areas of data sharing, data analysis and secure multiparty machine learning. 
+
+Even though these techniques offer promising prospects, they are still in early development stages and not yet considered for production environments.
+
+

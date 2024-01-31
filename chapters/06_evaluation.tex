@@ -1,0 +1,68 @@
+% !TeX root = ../main.tex
+% Add the above to each chapter to make compiling the PDF easier in some editors.
+
+\chapter{Evaluation}\label{chapter:evaluation}
+The evaluation focuses on two topics, firstly the security analysis of the framework, with regards to the SGX integration and secondly the performance analysis.
+
+\section{Security Analysis}
+Even though the ideal concept from chapter 4.1 could not yet be fully implemented, the following security analysis assumes that the entire report generation of SGX is already executed inside an enclave and that the report validation also runs within an enclave or another TEE.
+In addition, the threat model discussed in Chapter 2 serves as a basis for evaluating potential attacks. 
+
+For confidentiality and integrity, a distinction is made between the confidentiality and integrity of the data in use, i.e. within an enclave, or in transit, i.e over the network. The first is protected by the inherent security features of SGX: Memory encryption of enclave pages, data sealing and isolation of enclave memory. If the entire report generation is performed within an enclave without caching data outside the enclave, the confidentiality and integrity of the report can be maintained. A limitation poses the provisioning of metadata (certificates, CRLs, etc.). Since certificates and CRLs are regularly updated, the latest data must be fetched regularly and loaded into the enclave, which can be intercepted by a Dolev-Yao attacker.
+
+However, since the Intel certificates, i.e. root CA, intermediate CA and PCK certificate, are distributed publicly via the PCS anyway, and these do not contain any secret information, confidentiality is not an issue. On the other hand the integrity of the data is essential. Since Certificates and CRLs are signed by a trusted entity, the verifier would notice, if the data has been manipulated and a forged siganture is used. 
+
+Manifests however contain information about valid measurements and other values of the TEE/enclave. Typically they are generated and signed once, and stored inside the enclave for a long time. However, if they need to be updated, a secure update mechanism needs to be implemented for the enclave to ensure the integrity and confidentiality of the manifest data. If this is done, \textbf{security requirement 1} is completely ensured.
+
+The trustworthiness of an enclave is determined by verifying the attestation report. An inside attacker might attempt to obtain a signature for an attestation report using customized metadata files. While the attacker cannot manipulate the hardware-based trust measurements, it might be possible to generate software manifests with measurement values of malicious software and linking them to trustworthy software. 
+However, since the signature checks performed by the verifier, indicate whether the signature was created from a trusted entity or not, a manifest with forged signature would be detected immediately and rejected. \cite{CMC_paper} 
+Hence, the altered measurements within the manifest would serve no purpose. This ensures \textbf{security requirement 2}. 
+
+The aTLS Integration is based on top of TLS 1.3 protocol, therefore ensuring confidentiality, integrity and authenticity of the transmitted data  (\textbf{security requirement 3}) as well as Perfect Forwared Secrecy. It performs a post-handshake attestation over the secure channel (\textbf{security requirement 4}), which binds the long-term static identity of the channel and the session key into the report as a freshness value.This prevents MITM and relay attacks even if the long-term TLS identity is compromised. 
+As an example, an attacker M could intercept the TLS handshake between two parties A and B and by impersonating the other party in each case, establish a secure channel with them. When establishing a connection with entity A, the attacker would use the keys from the connection with B and forward B's attestation report. However, as the nonce of the attestation report contains the channel bindings of B and not of M as A expects, the report is rejected. \cite{CMC_paper}
+
+\section{Performance Analysis}
+
+The following benchmark results of the different implementations are the average of 100 different executions and were tested on a NUCP7HJY2 with an Intel Pentium Silver J5005 CPU. 
+
+Table \ref{table:performance} shows the measurements of the Generate() and Verify() methods for Intel SGX and TPMs. Since the currently implemented Generate() function for SGX only reads in a previously generated quote and packs it with the metadata into the CMC report structure, the value is not quite correct. If you add the time of the quote generation within the enclave, about 3.5ms, the total time is about 7.5ms. This value gives a rough indication of the time needed for the report generation. The actual report generation time is most likely below this time if the report is generated entirely within the enclave, since the file system IO is omitted. This is a very good value compared to, for example, a TPM, which needs about 412.2ms for report generation. 
+
+The Verify() function applied to an SGX report takes about 16.4ms if the required CRLs are already cached within the TEE. Otherwise they would have to be fetched by the PCS, which can take from about a few hundred milliseconds to a few seconds depending on the internet connection. However, since this only happens e.g. once a day, this is acceptable.
+The verification of TPM reports needs a bit more time with about 24.3ms.
+
+Concrete measurements for the Generate() and Verify() functions for SNP reports are not available. However, according to the paper \cite{CMC_paper}, the runtime for a mutual aTLS handshake between two SNP VMs on one machine takes about 31.2 seconds. This runtime is made up of the runtime of TLS 1.3 handshake and post-handshake attestation, including report generation and verification. For comparison, a TPM needs about 476.1ms for such a connection setup, according to the paper. Even though performance metrics of aTLS for SGX are currently unavailable, it is expected, based on the values for report generation and verification, that the runtime of SGX will likely exceed that of SNP by a small margin.
+
+\begin{table}[ht]
+	\centering
+	\begin{tabular}{lcccccc}
+		\toprule
+		& SGX &  TPM \\
+		\midrule
+		Generate() & 4.0ms  &  412.2ms \\
+		Verify()  & 16.4ms & 24.3ms \\
+		\bottomrule
+	\end{tabular}
+	\caption{Performance of Generate() and Verify() function}
+	\label{table:performance}
+\end{table}
+
+
+About the data size: 
+Table \ref{table:report_size} shows a size comparison between different attestation reports. By default, the CMC report is encoded in JSON format. An uncompressed SGX report has a size of 51296 bytes, of which 4600 bytes is the signed quote. This is 8165 bytes more than a SNP report. However, using Gzip it can be compressed to 24933 bytes lossless, a SNP report to 22824 bytes. TPM reports, on the other hand, are significantly larger at 90490 bytes. However, these can also be strongly compressed with Gzip to 38318 bytes. 
+In addition to the JSON format, the CMC also offers CBOR serialization, which can be used to reduce the report size even further (halve or even reduce it by three).
+
+\begin{table}[ht]
+	\centering
+	\begin{tabular}{lcccccc}
+		\toprule
+		& \multicolumn{2}{c}{TPM} & \multicolumn{2}{c}{SNP} & \multicolumn{2}{c}{SGX} \\
+		\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
+		& No Gzip & Gzip & No Gzip & Gzip & No Gzip & Gzip \\
+		\midrule
+		JSON (bytes) & 90490 & 38318 & 43131 & 22824 & 51296 & 24933 \\
+		\bottomrule
+	\end{tabular}
+	\caption{Size of Attestation Reports \cite{CMC_paper}}
+	\label{table:report_size}
+\end{table}
+

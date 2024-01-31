@@ -1,0 +1,13 @@
+% !TeX root = ../main.tex
+% Add the above to each chapter to make compiling the PDF easier in some editors.
+
+\chapter{Conclusion}\label{chapter:conclusion}
+
+
+The CMC framework basically offers the possibility of remote attestation between two TEEs and the establishment of a secure channel. Currently, various confidential computing technologies are already supported, such as AMD SEV-SNP, TPMs and ARM PSA.
+
+As part of the work, a concept for the integration of Intel SGX enclaves was developed, which changes the concept of the CMC somewhat, since it is not possible to run the cmc daemon and the estserver inside the TEE. The security of this concept has been analyzed and considered as sucessfull.
+The report verification was successfully implemented and tested. In addition, a sample application was developed that builds a CMC Report from an SGX Quote. 
+Even though it has not yet been possible to run the report generation entirely within an enclave, the functions serve as a solid basis for further development, even the future integration of Intel TDX. 
+
+The main task in the SGX implementation for now is to execute the quote generation and verification entirely within the enclave. For this, appropriate wrapper functions must be implemented, which call all existing functions, which are necessary for the generation/verification and TLS channel binding. These functions must then be compiled as a shared library so that they can be linked into an enclave and called from there. 
