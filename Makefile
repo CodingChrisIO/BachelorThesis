@@ -1,18 +1,16 @@
-FILE := main
-OUT  := build
+OUT := build
+FILE := main.tex
 
-.PHONY: pdf
-pdf:
-	latexmk -interaction=nonstopmode -outdir=$(OUT) -pdf -halt-on-error $(FILE)
+.PHONY: pdf clean
 
-.PHONY: watch
-watch:
-	latexmk -interaction=nonstopmode -outdir=$(OUT) -pdf -pvc -halt-on-error $(FILE)
+pdf: $(OUT)/$(notdir $(basename $(FILE))).pdf
 
-.PHONY: clean
+$(OUT)/$(notdir $(basename $(FILE))).pdf: $(FILE) $(OUT)
+	latexmk -pdf -pdflatex="pdflatex -interaction=nonstopmode" -bibtex -output-directory=$(OUT) $(FILE)
+
+$(OUT):
+	 mkdir -p $(OUT)
+
 clean:
-	rm -rf $(filter-out $(OUT)/$(FILE).pdf, $(wildcard $(OUT)/*))
+	latexmk -C -output-directory=$(OUT)
 
-.PHONY: purge
-purge:
-	rm -rf $(OUT)
